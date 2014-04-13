@@ -1,9 +1,10 @@
-function mood = analyse(~)
+function mood = analyse(a)
 % This is the main function of the program;
 % It retrieves musical information using MIRtoolbox, analyses the results
 % and returns the mood of the audio file;
 % This file contains tests for five features: key mode, tempo, timbre,
 % dynamics and pitch.
+% ARGUMENT 'a' IS PATH TO AUDIO FILE;
 % NOTE: Semicolons are used to suppress the output of functions.
 
 % MIRtoolbox displays a progress bar by default, we are going to disable
@@ -13,7 +14,7 @@ mirwaitbar(0);
 % First we need to load an audio file into MIRtoolbox, using the miraudio
 % function;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-audio = miraudio('TestFiles/CommercialMusic/originaldon30.wav');
+audio = a;
 
 % Analyse for key mode (major or minor);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -39,7 +40,7 @@ end
 
 % The information is therefore stored into keymode, ready to be retrieved
 % or displayed at any time.
-disp('keymode');
+disp('keymode (0 - major, 1 - minor)');
 disp(keymode);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -83,7 +84,7 @@ else
     temporesult = 2; %veryfast
 end
 
-disp('temporesult');
+disp('temporesult (0 - slow, 1 - fast, 2 - very fast)');
 disp(temporesult);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -142,9 +143,9 @@ else lowenergyresult == 0 & rolloffresult == 1
     timbre = 1; %bright
 end
 
-disp('dynamics');
+disp('dynamics (0 - constant, 1 - variable)');
 disp(dynamics);
-disp('timbre');
+disp('timbre (0 - dark, 1 - bright)');
 disp(timbre);
 
 % TO DO Find irregularity among successive peaks in order to determine changes
@@ -177,8 +178,9 @@ p = mirpitch(sg);
 % Store data into array B in order to simplify our work;
 B = mirgetdata(p);
 
-% Find maximum frequency in array B (audio file);
-pitch = max(max(B));
+% Find mean frequency (pitch) in array B (audio file);
+%pitch = nanmean(B);
+pitch = nanmean(nanmean(B));
 
 % Format Hz value so it can be displayed as a string;
 %pitch = sprintf('%.1f',pitch);
@@ -193,18 +195,70 @@ else
     pitchresult = 2; %high
 end
 
-disp('pitch');
+disp('pitch (0 - low, 1 - med, 2 - high)');
 disp(pitchresult);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% In order to get an accurate result we need to add the weight of each
+% parameter (equal values will return a wrong mood);
+% During research and testing I've found the following percentages to give
+% the most accurate results (in the order of their importance):
+% 1. Dynamics - 40%
+% 2. Tempo - 25%
+% 3. Pitch - 15%
+% 4. Key mode - 10%
+% 5. Timbre - 10%
+% Therefore...
+
+R = [0.40, 0.25, 0.15, 0.10, 0.10];
+    
+F = [dynamics, temporesult, pitchresult, keymode, timbre];
+
+disp(R);
+disp(F);
+
+moodexpected = F;
+            
+%disp(moodexpected);
+
+happy1 = [0, 1, 1, 0, 1];
+        
+happy2 = [1, 2, 2, 0, 1];
+
+sad1 = [0, 0, 0, 1, 0];
+
+sad2 = [1, 1, 1, 1, 0];
+        
+angry1 = [1, 1, 1, 0, 0];
+        
+angry2 = [1, 2, 2, 0, 0];
+        
+calm1 = [0, 0, 0, 0, 0];
+        
+calm2 = [0, 1, 1, 0, 0];
+        
+calm3 = [0, 1, 2, 0, 0];
+        
+calm4 = [0, 0, 0, 0, 1];
+        
+calm5 = [0, 1, 1, 0, 1];
+        
+calm6 = [0, 1, 2, 0, 1];
+        
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Time to compare the results and find out the mood of the audio file!
 
-%if keymode == 0 && (temporesult == 1 || temporesult == 2) && timbre == 1 && dynamics == 0 && (pitchresult == 1 || pitchresult == 2)
-%    mood = 'HAPPY';
-%else
-%    mood = 'orice altceva lol';
-%end
-
-%disp(pitch);
+if (moodexpected == happy1 | moodexpected == happy2)
+    mood = 'HAPPY';
+elseif (moodexpected == sad1 | moodexpected == sad2)
+    mood = 'SAD';
+elseif (moodexpected == angry1 | moodexpected == angry2)
+    mood = 'ANGRY';
+else
+    mood = 'CALM';
+end
+ 
+disp(mood);
 
 % Print out Hz value.
 %disp(pitchresult);
